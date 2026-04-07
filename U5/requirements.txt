@@ -1,9 +1,9 @@
-# Unit V: DevOps for AI Deployment Requirements
-pyspark>=3.5.0
-fastapi>=0.100.0
-uvicorn>=0.22.0
-streamlit>=1.24.0
-httpx>=0.24.0
-pandas>=1.5.0
-matplotlib>=3.5.0
-seaborn>=0.11.0
+numpy
+pandas
+scikit-learn
+joblib
+flask
+pytest
+pyspark
+matplotlib
+pandasql

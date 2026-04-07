@@ -1,26 +1,38 @@
-# DevOps for AI Implementation (Unit V)
-# Using Python with OpenJDK (Required for PySpark)
-FROM python:3.8-slim-buster
+# Unit V DevOps: Standalone AI Prediction Engine
+FROM python:3.9-slim
 
-# Install OpenJDK 11 (Spark Dependency)
-RUN apt-get update && apt-get install -y openjdk-11-jdk-headless && rm -rf /var/lib/apt/lists/*
+# ── Install Java (Required by PySpark) ──
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends default-jre-headless && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set Environment Variables
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/default-java
 ENV PATH=$JAVA_HOME/bin:$PATH
 
-# Create Project Directory
 WORKDIR /app
 
-# Copy Requirements and Install
+# ── Install Python Dependencies ──
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Project Files
-COPY . .
+# ── Copy Project Logic (now self-contained in U5) ──
+COPY src/ ./src/
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-# Expose API and Dashboard ports
-EXPOSE 8000 8501
+# ── Copy NCRB Data (now embedded in U5/data) ──
+COPY data/ ./data/
 
-# Default Command (Start the AI API)
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# ── Environment ──
+ENV FLASK_APP=src/app/app.py
+ENV PYTHONUNBUFFERED=1
+ENV CRIME_DATA_PATH=data/Crimes_in_india_2001-2013.csv
+
+EXPOSE 5000
+
+# ── Metadata ──
+LABEL maintainer="AYUSH JHA"
+LABEL description="Unit V DevOps: Self-Contained AI Crime Analytics Pipeline"
+
+# ── Execute Startup Chain ──
+CMD ["./entrypoint.sh"]
