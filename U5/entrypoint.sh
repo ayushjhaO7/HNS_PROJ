@@ -2,7 +2,6 @@
 set -e
 
 echo "=================================================="
-echo "  UNIT V — FINAL OPTIMIZED 2-SERVICE CLUSTER"
 echo "  MODE: ${SERVICE_TYPE^^}"
 echo "=================================================="
 
@@ -11,9 +10,15 @@ mkdir -p "$SHARED_DIR"
 
 if [ "$SERVICE_TYPE" == "analytics" ]; then
     echo "[LEAD] Initializing High-Resolution Analytics Engine..."
-    # Always perform data and model check in lead
-    python src/data/data_preparation.py
-    python src/model/model_training.py
+    
+    # Smart Startup: Only run pipeline if artifacts are missing
+    if [ ! -f "model.pkl" ] || [ ! -f "cleaned_crime_features.csv" ]; then
+        echo "[UPDATE] Artifacts missing or new logic detected. Running pipeline..."
+        python src/data/data_preparation.py
+        python src/model/model_training.py
+    else
+        echo "✓ Artifacts detected. Skipping pipeline for instant startup."
+    fi
     
     # Sync ALL data including the NEW 2001-2013 dataset for PySpark SQL Engine
     # Note: Using the filename specifically requested by the user

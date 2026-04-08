@@ -1,55 +1,46 @@
 import pandas as pd
-import numpy as np
 import os
 
-# ── Data Paths ──
-# New path points to the root directory dataset
-CRIME_DATA_PATH = os.getenv("CRIME_DATA_PATH", "data/Crimes_in_india_2001-2013.csv")
-OUTPUT_DATA_PATH = "cleaned_crime_features.csv"
+# Configuration
+DATA_PATH = os.getenv("CRIME_DATA_PATH", "data/Crimes_in_india_2001-2013.csv")
+OUTPUT_PATH = "cleaned_crime_features.csv"
+TOP_CRIMES = ["THEFT", "HURT/GREVIOUS HURT", "OTHER THEFT", "AUTO THEFT", "BURGLARY"]
 
-# Top 5 crime types based on Unit IV analysis (Matching CSV Column Names)
-TOP_CRIMES = [
-    "THEFT", 
-    "HURT/GREVIOUS HURT", 
-    "OTHER THEFT", 
-    "AUTO THEFT", 
-    "BURGLARY"
-]
+def normalize_state(s):
+    if not s: return ""
+    # Standardize to Title Case, remove extra spaces, and unify variants
+    s = s.upper().replace("&", " & ").replace("  ", " ").strip()
+    if "DELHI" in s: return "Delhi"
+    if "A & N" in s: return "A & N Islands"
+    if "D & N" in s: return "D & N Haveli"
+    if "DAMAN" in s: return "Daman & Diu"
+    if "JAMMU" in s: return "Jammu and Kashmir"
+    if "ODISHA" in s or "ORISSA" in s: return "Orissa"
+    if "UTTARAKHAND" in s or "UTTARANCHAL" in s: return "Uttaranchal"
+    # Mapping certain standard casing
+    mapping = {"UTTAR PRADESH": "Uttar Pradesh", "MADHYA PRADESH": "Madhya Pradesh", "ANDHRA PRADESH": "Andhra Pradesh", 
+               "WEST BENGAL": "West Bengal", "HIMACHAL PRADESH": "Himachal Pradesh", "ARUNACHAL PRADESH": "Arunachal Pradesh",
+               "JHARKHAND": "Jharkhand", "CHHATTISGARH": "Chhattisgarh"}
+    return mapping.get(s, s.title())
 
-def preprocess_crime_data(input_csv, output_csv):
-    """
-    Reads the wide-format NCRB dataset, filters for top crime types, 
-    and aggregates them into a DISTRICT-level feature matrix.
-    """
+def preprocess(input_csv, output_csv):
     if not os.path.exists(input_csv):
-        # Fallback to local data/ if root is not accessible in container
-        input_csv = "data/Crimes_in_india_2001-2013.csv"
-        if not os.path.exists(input_csv):
-            print(f"Error: {input_csv} not found.")
-            return False
+        print(f"Error: {input_csv} missing."); return False
 
-    print(f"Loading expanded wide-format data from {input_csv}...")
+    print(f"Crunching {input_csv}...")
     df = pd.read_csv(input_csv)
     
-    # ── FILTER OUT SUMMARY ROWS ──
-    # NCRB data contains 'TOTAL' rows for states which skew the clustering
-    exclude_list = ['TOTAL', 'DELHI UT TOTAL', 'DISTRICT TOTAL', 'GRAND TOTAL']
-    df = df[~df['DISTRICT'].str.upper().isin(exclude_list)]
+    # 1. Clean: Filter out summary rows and normalize names
     df = df[~df['DISTRICT'].str.contains('TOTAL', case=False, na=False)]
+    df['STATE/UT'] = df['STATE/UT'].apply(normalize_state)
     
-    # ── AGGREGATION ──
-    print(f"Aggregating {len(TOP_CRIMES)} core features by District...")
+    # 2. Extract & Aggregate: Top features by State/District
+    cols = ['STATE/UT', 'DISTRICT'] + TOP_CRIMES
+    features = df[cols].groupby(['STATE/UT', 'DISTRICT']).sum().reset_index()
     
-    # Select ID columns and the top 5 crime columns
-    cols_to_keep = ['STATE/UT', 'DISTRICT'] + TOP_CRIMES
-    df_filtered = df[cols_to_keep]
-    
-    # Group by State + District and sum across years
-    features_df = df_filtered.groupby(['STATE/UT', 'DISTRICT']).sum().reset_index()
-    
-    print(f"Saving district feature matrix to {output_csv} (Districts: {len(features_df)})")
-    features_df.to_csv(output_csv, index=False)
+    print(f"Exporting cleaned matrix ({len(features)} districts) to {output_csv}")
+    features.to_csv(output_csv, index=False)
     return True
 
 if __name__ == "__main__":
-    preprocess_crime_data(CRIME_DATA_PATH, OUTPUT_DATA_PATH)
+    preprocess(DATA_PATH, OUTPUT_PATH)

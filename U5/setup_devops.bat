@@ -1,6 +1,6 @@
 @echo off
 echo ==========================================
-echo UNIT V: DEVOPS FOR AI PIPELINE (SIMULATION)
+echo UNIT V: DEVOPS FOR AI PIPELINE
 echo ==========================================
 
 echo.
