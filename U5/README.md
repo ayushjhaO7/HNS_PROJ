@@ -60,8 +60,6 @@ U5/
 
 ## 🛠️ How to Run
 
-# CI/CD Test Run.
-
 ### Docker Compose (Recommended)
 ```powershell
 cd "d:\Project\HNS PROJECT\U5"
