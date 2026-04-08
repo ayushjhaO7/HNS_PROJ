@@ -128,4 +128,8 @@ def predict_district():
         if not row.empty: return jsonify({"risk": data["risks"][key]["risk_level"], "features": {c: float(row[c].values[0]) for c in data["meta"]['features']}})
     return jsonify({"error": "Not found"}), 404
 
+@app.route("/health")
+def health():
+    return jsonify({"status": "healthy", "service": SERVICE_TYPE, "data_loaded": data["features"] is not None})
+
 if __name__ == "__main__": app.run(host="0.0.0.0", port=PORT, debug=True)

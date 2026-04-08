@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Set up Python 3.9
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
@@ -28,7 +28,7 @@ jobs:
     - name: Data Ingestion
       run: |
         cd U5
-        CRIME_DATA_PATH=../crime---analysis/data/cleaned_crime_data.csv python src/data/data_preparation.py
+        CRIME_DATA_PATH=data/cleaned_crime_data.csv python src/data/data_preparation.py
 
     - name: Model Training (PySpark K-Means)
       run: |
